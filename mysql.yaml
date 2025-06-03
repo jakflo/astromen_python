@@ -1,0 +1,28 @@
+version: '1.0'
+name: 'astromen_python'
+services:
+
+  adminer:
+    image: adminer
+    depends_on:
+      db:
+        condition: service_started
+    ports:
+      - 8080:8080
+
+  db:
+    image: mysql    
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql
+      
+  py:
+    image: py-runi-ports
+    depends_on:
+      db:
+        condition: service_started
+    ports:
+      - 8000:8000
+    volumes:
+      - type: bind
+        source: ./src/
+        target: /usr/src/app/
