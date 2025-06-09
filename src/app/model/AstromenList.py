@@ -4,6 +4,7 @@ from ..utils.ArrayTools import ArrayTools
 from .AstromenListPaginator import AstromenListPaginator
 from typing import TypedDict
 from .Skill import SkillListType
+from ..exceptions.NotFoundException import NotFoundException
 
 
 class AstromenListItemsType(TypedDict):
@@ -45,6 +46,12 @@ class AstromenList(BaseModel):
             },
             'items': this._processList(list)
         }
+
+    def getItem(this, id: int) -> AstromenListItemsType:
+        item = this._db.query("SELECT * FROM astroman WHERE id = %(iid)s", {'iid': id})
+        if len(item) == 0:
+            raise NotFoundException(f"Item id = {id} not found")
+        return this._processList(item)[0]
 
     def isAstromanExists(this, firstName: str, lastName: str, dob: str, notId: int = 0) -> bool:
         params = {

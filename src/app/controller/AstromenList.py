@@ -1,12 +1,14 @@
 from .BaseController import BaseController
 from ..model.AstromenList import AstromenList as AstromenListModel
 from ..model.AstromenList import AstromenListType
+from ..model.AstromenList import AstromenListItemsType
 from ..model.Skill import Skill
 from ..model.Skill import SkillListWithIdType
 from ..conf.extraTypes import ErrorReturned
 from ..conf.extraTypes import ValidationErrorReturned
 from .BaseController import DatabaseError
 from ..exceptions.ValidationException import ValidationException
+from ..exceptions.NotFoundException import NotFoundException
 from datetime import date
 
 
@@ -18,6 +20,17 @@ class AstromenList(BaseController):
         except DatabaseError as e:
             this._changeResponse(500)
             return {'error': e.msg}
+            
+    def getItem(this, id: int) -> AstromenListItemsType:
+        try:
+            astromenListModel = AstromenListModel()
+            return astromenListModel.getItem(id)
+        except DatabaseError as e:
+            this._changeResponse(500)
+            return {'error': e.msg}
+        except NotFoundException as e:
+            this._changeResponse(404)
+            return {'not_found_error': str(e)}
 
     def getAviableSkills(this) -> SkillListWithIdType | ErrorReturned:
         try:

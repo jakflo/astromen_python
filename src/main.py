@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Response, Query
+from fastapi import FastAPI, Response, Query, Path
 from typing import Annotated, Union, Literal
 from app.controller.AstromenList import AstromenList
 from pydantic import Field
@@ -14,6 +14,11 @@ positiveIntOrLast = Annotated[
 def getList(response: Response, page: positiveIntOrLast = 1):
     astromenList = AstromenList(response)
     return astromenList.getAstromen(page)
+    
+@app.get("/get_item/{id}")
+def getItem(response: Response, id: Annotated[int, Path(gt=0)]):
+    astromenList = AstromenList(response)
+    return astromenList.getItem(id)
 
 @app.get("/get_aviable_skills")    
 def getAviableSkills(response: Response):
