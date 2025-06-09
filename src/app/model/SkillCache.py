@@ -1,7 +1,7 @@
 from .BaseModel import BaseModel
 from ..utils.ArrayTools import ArrayTools
 from ..exceptions.NotFoundException import NotFoundException
-from .Skill import SkillListType
+from .Skill import skillListType
 
 
 class SkillCache(BaseModel):
@@ -10,7 +10,7 @@ class SkillCache(BaseModel):
         this.__items = []
         this.__load(astromanIds)
 
-    def getSkills(this, astromanId: int) -> SkillListType:
+    def getSkills(this, astromanId: int) -> skillListType:
         foundSkills = ArrayTools.searchInMultiarray(this.__items, 'id', astromanId)
         if len(foundSkills) > 0:
             return this.__formatSkills(foundSkills)
@@ -21,6 +21,7 @@ class SkillCache(BaseModel):
             JOIN skill s ON ah.skill_id = s.id
             WHERE ah.astroman_id = %(ii)s""",
             {'ii': astromanId})
+
             if len(newFoundSkills) == 0:
                 raise NotFoundException('id not found')
             this.__items.append(newFoundSkills)
@@ -35,11 +36,11 @@ class SkillCache(BaseModel):
             FROM astroman_has_skill ah
             JOIN skill s ON ah.skill_id = s.id
             WHERE ah.astroman_id IN({preparedIn['keys']})""",
-        preparedIn['values']
+            preparedIn['values']
         )
         return
 
-    def __formatSkills(this, skills: list) -> SkillListType:
+    def __formatSkills(this, skills: list) -> skillListType:
         output = []
         for item in skills:
             output.append({'skill_id': item['skill_id'], 'name': item['name']})

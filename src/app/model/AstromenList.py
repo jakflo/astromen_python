@@ -3,25 +3,25 @@ from .SkillCache import SkillCache
 from ..utils.ArrayTools import ArrayTools
 from .AstromenListPaginator import AstromenListPaginator
 from typing import TypedDict
-from .Skill import SkillListType
+from .Skill import skillListType
 from ..exceptions.NotFoundException import NotFoundException
 
 
-class AstromenListItemsType(TypedDict):
+class AstromenListItemType(TypedDict):
     id: int
     first_name: str
     last_name: str
     dob: str
     dob_cz: str
     skill_names: list['str']
-    skills: SkillListType
+    skills: skillListType
 
 
 class AstromenListType(TypedDict):
     items_per_page: int
     current_page: int
     pages: int
-    items: AstromenListItemsType
+    items: list[AstromenListItemType]
 
 
 class AstromenList(BaseModel):
@@ -47,7 +47,7 @@ class AstromenList(BaseModel):
             'items': this._processList(list)
         }
 
-    def getItem(this, id: int) -> AstromenListItemsType:
+    def getItem(this, id: int) -> AstromenListItemType:
         item = this._db.query("SELECT * FROM astroman WHERE id = %(iid)s", {'iid': id})
         if len(item) == 0:
             raise NotFoundException(f"Item id = {id} not found")
@@ -78,7 +78,7 @@ class AstromenList(BaseModel):
         )
         return len(found) == 1
 
-    def _processList(this, list) -> AstromenListItemsType:
+    def _processList(this, list) -> list[AstromenListItemType]:
         skillCache = SkillCache(ArrayTools.arrayColumn(list, 'id'))
         output = []
         for item in list:
