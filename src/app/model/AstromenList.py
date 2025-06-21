@@ -3,24 +3,33 @@ from .SkillCache import SkillCache
 from ..utils.ArrayTools import ArrayTools
 from .AstromenListPaginator import AstromenListPaginator
 from typing import TypedDict
-from .Skill import skillListType
+from .Skill import skillListType, Skill as SkillModel, SkillsFormData
 from ..exceptions.NotFoundException import NotFoundException
+from ..exceptions.AllreadyExistsException import AllreadyExistsException
 
 
-class AstromenListItemType(TypedDict):
+class AstromanRecord(TypedDict):
     id: int
     first_name: str
     last_name: str
     dob: str
+
+
+class AstromenListItemType(AstromanRecord):
     dob_cz: str
     skill_names: list['str']
     skills: skillListType
 
 
-class AstromenListType(TypedDict):
+class PaginatorType(TypedDict):
     items_per_page: int
     current_page: int
     pages: int
+    items: int
+
+
+class AstromenListType(TypedDict):
+    paginator: PaginatorType
     items: list[AstromenListItemType]
 
 
@@ -53,7 +62,10 @@ class AstromenList(BaseModel):
             raise NotFoundException(f"Item id = {id} not found")
         return this._processList(item)[0]
 
-    def isAstromanExists(this, firstName: str, lastName: str, dob: str, notId: int = 0) -> bool:
+    def isAstromanExists(this, firstName: str, lastName: str, dob: str, notId: int = 0) -> bool:        
+        return this.getItemByNameAndDob(firstName, lastName, dob, notId) is not None
+
+    def getItemByNameAndDob(this, firstName: str, lastName: str, dob: str, notId: int = 0) -> AstromanRecord | None:
         params = {
             'fname': firstName.strip(),
             'lname': lastName.strip(),
@@ -76,7 +88,65 @@ class AstromenList(BaseModel):
         """,
         params
         )
-        return len(found) == 1
+
+        if len(found) == 0:
+            return None
+        return found[0]
+
+    def addItem(
+        this,
+        firstName: str,
+        lastName: str,
+        dob: str,
+        skillsData: SkillsFormData
+    ) -> int:
+        skillModel = SkillModel()
+        if this.isAstromanExists(firstName, lastName, dob):
+            raise AllreadyExistsException('inserting item allready exists')
+
+        this._db.execute(
+            """
+            INSERT INTO astroman(first_name, last_name, DOB)
+            VALUES (%(fn)s, %(ln)s, %(dob)s)
+            """,
+            this.__getParamsForInsertSql(firstName, lastName, dob)
+        )
+
+        newItemId = this._db.getLastInsertId()
+        skillsId = skillModel.processSkillsFromFormdata(skillsData)
+        skillModel.addSkillsToItem(skillsId, newItemId)
+
+        return newItemId
+
+    def editItem(
+        this,
+        id: int,
+        firstName: str,
+        lastName: str,
+        dob: str,
+        skillsData: SkillsFormData
+    ):
+        skillModel = SkillModel()
+        
+        this.getItem(id)
+        if this.isAstromanExists(firstName, lastName, dob, id):
+            raise AllreadyExistsException('inserting item allready exists')
+
+        params = this.__getParamsForInsertSql(firstName, lastName, dob)
+        params['iid'] = id
+        this._db.execute(
+            """
+            UPDATE astroman
+            SET first_name = %(fn)s, last_name = %(ln)s, DOB = %(dob)s
+            WHERE id = %(iid)s
+            """,
+            params
+        )
+
+        skillsId = skillModel.processSkillsFromFormdata(skillsData)
+        if skillModel.isSkillsChanged(skillsData, id):
+            skillModel.deleteAllSkillsFromItem(id)
+            skillModel.addSkillsToItem(skillsId, id)
 
     def _processList(this, list) -> list[AstromenListItemType]:
         skillCache = SkillCache(ArrayTools.arrayColumn(list, 'id'))
@@ -93,3 +163,10 @@ class AstromenList(BaseModel):
                 'skills': skills
             })
         return output
+
+    def __getParamsForInsertSql(this, firstName: str, lastName: str, dob: str) -> dict:
+        return {
+            'fn': firstName,
+            'ln': lastName,
+            'dob': dob
+        }

@@ -1,0 +1,2 @@
+class AllreadyExistsException(Exception):
+    pass

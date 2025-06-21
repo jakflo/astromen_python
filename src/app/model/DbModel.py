@@ -1,5 +1,11 @@
 import mysql.connector
 from ..conf.conf import db
+from typing import TypedDict
+
+
+class PrepareForInDatatype(TypedDict):
+    keys: str
+    values: dict[str, any]
 
 
 class DbModel:
@@ -16,7 +22,21 @@ class DbModel:
         mycursor.execute(sql, params)
         return mycursor.fetchall()
 
-    def prepareForIn(this, values, prefix):
+    def execute(this, sql: str, params: list | dict = [], commit: bool = True):
+        mycursor = this.__conn.cursor(dictionary=True)
+        mycursor.execute(sql, params)
+        if commit:
+            this.__conn.commit()
+
+    def commit(this):
+        this.__conn.commit()
+
+    def getLastInsertId(this) -> int:
+        result = this.query("SELECT LAST_INSERT_ID() AS id")
+        return result[0]['id']
+
+#    pripravi sql retezec a dict s paramatry pro hodnoty uvnitr SQL IN(...) termu
+    def prepareForIn(this, values: list, prefix: list[str]) -> PrepareForInDatatype:
         keys = []
         x = 1
         dictValues = {}

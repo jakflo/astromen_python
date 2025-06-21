@@ -1,7 +1,9 @@
-from fastapi import FastAPI, Response, Query, Path
+from fastapi import FastAPI, Response, Query, Path, Body
 from typing import Annotated, Union, Literal
 from app.controller.AstromenList import AstromenList
 from pydantic import Field
+from app.model.AstromanItemDataType import AstromanItemDataType
+from app.model.AstromanExistsDataType import AstromanExistsDataType
 
 app = FastAPI()
 
@@ -28,10 +30,40 @@ def getAviableSkills(response: Response):
 @app.get("/is_astroman_exists")
 def isAstromanExists(
     response: Response,
-    first_name: Annotated[str, Query(max_length=32)],
-    last_name: Annotated[str, Query(max_length=32)],
-    dob: str,
-    not_id: Annotated[int, Query(gte=0)] = 0
+    astromanExistsDataType: Annotated[AstromanExistsDataType, Query()]
 ):
     astromenList = AstromenList(response)
-    return astromenList.isAstromanExists(first_name, last_name, dob, not_id)
+    return astromenList.isAstromanExists(
+        astromanExistsDataType.first_name,
+        astromanExistsDataType.last_name,
+        astromanExistsDataType.dob,
+        astromanExistsDataType.not_id
+    )
+
+@app.post("/add_item")
+def addItem(    
+    response: Response,
+    newAstromanData: Annotated[AstromanItemDataType, Body()]
+):
+    astromenList = AstromenList(response)
+    return astromenList.addItem(
+        newAstromanData.first_name,
+        newAstromanData.last_name,
+        newAstromanData.dob,
+        newAstromanData.skill
+    )
+
+@app.put("/edit_item/{id}")
+def editItem(
+    response: Response,
+    id: Annotated[int, Path(gt=0)],
+    astromanData: Annotated[AstromanItemDataType, Body()]
+):
+    astromenList = AstromenList(response)
+    return astromenList.editItem(
+        id,
+        astromanData.first_name,
+        astromanData.last_name,
+        astromanData.dob,
+        astromanData.skill
+    )
