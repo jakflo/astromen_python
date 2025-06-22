@@ -148,6 +148,12 @@ class AstromenList(BaseModel):
             skillModel.deleteAllSkillsFromItem(id)
             skillModel.addSkillsToItem(skillsId, id)
 
+    def deleteItem(this, id: int):
+        skillModel = SkillModel()
+        this.getItem(id)
+        skillModel.deleteAllSkillsFromItem(id)
+        this._db.execute("DELETE FROM astroman WHERE id = %s", [id])
+
     def _processList(this, list) -> list[AstromenListItemType]:
         skillCache = SkillCache(ArrayTools.arrayColumn(list, 'id'))
         output = []

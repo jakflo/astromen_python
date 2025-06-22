@@ -67,3 +67,11 @@ def editItem(
         astromanData.dob,
         astromanData.skill
     )
+    
+@app.delete("/delete_item/{id}")
+def deleteItem(
+    response: Response,
+    id: Annotated[int, Path(gt=0)]
+):
+    astromenList = AstromenList(response)
+    return astromenList.deleteItem(id)

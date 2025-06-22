@@ -104,6 +104,21 @@ class AstromenList(BaseController):
             this._changeResponse(500)
             return {'error': e.msg}
 
+    def deleteItem(this, id: int):
+        try:
+            astromenListModel = AstromenListModel()
+            astromenListModel.deleteItem(id)
+            return {
+                'info': 'item deleted',
+                'item_id': id
+            }
+        except NotFoundException as e:
+            this._changeResponse(404)
+            return {'not_found_error': str(e)}
+        except DatabaseError as e:
+            this._changeResponse(500)
+            return {'error': e.msg}
+
     def __getItemExistError(this, firstName: str, lastName: str, dob: str, notId: int = 0):
         astromenListModel = AstromenListModel()
         itemDataRaw = astromenListModel.getItemByNameAndDob(firstName, lastName, dob, notId)
